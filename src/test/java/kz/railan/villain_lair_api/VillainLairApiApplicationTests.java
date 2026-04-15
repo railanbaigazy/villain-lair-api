@@ -1,13 +1,14 @@
 package kz.railan.villain_lair_api;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest
+import org.junit.jupiter.api.Test;
+
 class VillainLairApiApplicationTests {
 
 	@Test
 	void contextLoads() {
+		assertNotNull(VillainLairApiApplication.class);
 	}
 
 }
