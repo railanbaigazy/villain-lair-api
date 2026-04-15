@@ -1,0 +1,13 @@
+package kz.railan.villain_lair_api;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class VillainLairApiApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
