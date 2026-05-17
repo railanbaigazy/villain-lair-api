@@ -4,8 +4,13 @@ import kz.railan.villain_lair_api.auth.dto.LoginRequest;
 import kz.railan.villain_lair_api.auth.dto.LoginResponse;
 import kz.railan.villain_lair_api.auth.dto.RegisterRequest;
 import kz.railan.villain_lair_api.auth.dto.RegisterResponse;
+import kz.railan.villain_lair_api.common.config.KafkaTopicConfig;
 import kz.railan.villain_lair_api.common.exception.ConflictException;
 import kz.railan.villain_lair_api.common.security.JwtService;
+import kz.railan.villain_lair_api.event.KafkaEventPublisher;
+import kz.railan.villain_lair_api.event.UserRegisteredEvent;
+import kz.railan.villain_lair_api.economy.entity.TransactionType;
+import kz.railan.villain_lair_api.economy.service.EconomyService;
 import kz.railan.villain_lair_api.hero.entity.HeroInventoryItem;
 import kz.railan.villain_lair_api.hero.entity.HeroProfile;
 import kz.railan.villain_lair_api.hero.entity.Weapon;
@@ -14,6 +19,7 @@ import kz.railan.villain_lair_api.hero.repository.HeroProfileRepository;
 import kz.railan.villain_lair_api.hero.repository.WeaponRepository;
 import kz.railan.villain_lair_api.lair.entity.Guard;
 import kz.railan.villain_lair_api.lair.entity.Lair;
+import kz.railan.villain_lair_api.lair.entity.LairStatus;
 import kz.railan.villain_lair_api.lair.entity.Trap;
 import kz.railan.villain_lair_api.lair.repository.GuardRepository;
 import kz.railan.villain_lair_api.lair.repository.LairRepository;
@@ -32,40 +38,35 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
-    private static final String STARTER_WEAPON_NAME = "Rusty Blaster";
+    private static final String STARTER_WEAPON_CODE = "BASIC_SWORD";
+    private static final int STARTER_COINS = 100;
 
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private HeroProfileRepository heroProfileRepository;
-
     @Autowired
     private WeaponRepository weaponRepository;
-
     @Autowired
     private HeroInventoryItemRepository heroInventoryItemRepository;
-
     @Autowired
     private VillainProfileRepository villainProfileRepository;
-
     @Autowired
     private LairRepository lairRepository;
-
     @Autowired
     private GuardRepository guardRepository;
-
     @Autowired
     private TrapRepository trapRepository;
-
     @Autowired
     private PasswordEncoder passwordEncoder;
-
     @Autowired
     private AuthenticationManager authenticationManager;
-
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private EconomyService economyService;
+    @Autowired
+    private KafkaEventPublisher eventPublisher;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -81,14 +82,21 @@ public class AuthService {
         user.setEmail(request.email());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(request.role());
-        user.setCoins(100);
+        user.setCoins(0);
         User savedUser = userRepository.save(user);
+        economyService.credit(savedUser, STARTER_COINS, TransactionType.STARTER_BONUS, "Starter bonus on registration");
 
         if (request.role() == Role.HERO) {
             createHeroStarterState(savedUser);
         } else {
             createVillainStarterState(savedUser, request.lairName());
         }
+
+        eventPublisher.publish(
+                KafkaTopicConfig.USER_REGISTERED,
+                String.valueOf(savedUser.getId()),
+                UserRegisteredEvent.of(savedUser.getId(), savedUser.getUsername(), savedUser.getRole().name())
+        );
 
         return new RegisterResponse(savedUser.getId(), savedUser.getUsername(), savedUser.getRole());
     }
@@ -108,12 +116,13 @@ public class AuthService {
         profile.setHealth(100);
         HeroProfile savedProfile = heroProfileRepository.save(profile);
 
-        Weapon weapon = weaponRepository.findByName(STARTER_WEAPON_NAME)
+        Weapon weapon = weaponRepository.findByCode(STARTER_WEAPON_CODE)
                 .orElseThrow(() -> new IllegalStateException("Starter weapon seed is missing"));
         HeroInventoryItem item = new HeroInventoryItem();
         item.setHeroProfile(savedProfile);
         item.setWeapon(weapon);
         item.setQuantity(1);
+        item.setCurrentDurability(weapon.getDurability());
         item.setEquipped(true);
         heroInventoryItemRepository.save(item);
     }
@@ -129,7 +138,9 @@ public class AuthService {
         lair.setName((requestedLairName == null || requestedLairName.isBlank()) ? user.getUsername() + "'s Lair" : requestedLairName);
         lair.setLevel(1);
         lair.setHealth(100);
+        lair.setMaxHealth(100);
         lair.setSecurityLevel(15);
+        lair.setStatus(LairStatus.ACTIVE);
         Lair savedLair = lairRepository.save(lair);
 
         Guard guard = new Guard();
@@ -143,7 +154,7 @@ public class AuthService {
         trap.setLair(savedLair);
         trap.setName("Spike Trap");
         trap.setPower(8);
-        trap.setDurability(20);
+        trap.setDurability(4);
         trap.setActive(true);
         trapRepository.save(trap);
     }

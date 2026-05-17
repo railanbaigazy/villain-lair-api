@@ -5,6 +5,9 @@ public record LairPublicResponse(
         String name,
         Integer level,
         Integer health,
-        Integer securityLevel
+        Integer maxHealth,
+        Integer securityLevel,
+        String ownerUsername,
+        String status
 ) {
 }

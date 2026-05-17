@@ -34,6 +34,9 @@ public class HeroInventoryItem {
     @Column(nullable = false)
     private Integer quantity;
 
+    @Column(name = "current_durability", nullable = false)
+    private Integer currentDurability;
+
     @Column(nullable = false)
     private Boolean equipped;
 }

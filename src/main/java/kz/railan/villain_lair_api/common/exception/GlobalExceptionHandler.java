@@ -35,6 +35,16 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.FORBIDDEN, ex.getMessage(), request, Map.of());
     }
 
+    @ExceptionHandler(InsufficientCoinsException.class)
+    ResponseEntity<ApiErrorResponse> handleInsufficientCoins(InsufficientCoinsException ex, HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(InvalidGameActionException.class)
+    ResponseEntity<ApiErrorResponse> handleInvalidGameAction(InvalidGameActionException ex, HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, ex.getMessage(), request, Map.of());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     ResponseEntity<ApiErrorResponse> handleBadCredentials(HttpServletRequest request) {
         return error(HttpStatus.UNAUTHORIZED, "Invalid email or password", request, Map.of());

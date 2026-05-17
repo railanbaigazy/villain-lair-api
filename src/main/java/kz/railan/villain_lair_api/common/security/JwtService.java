@@ -8,18 +8,26 @@ import java.time.Instant;
 import java.util.Date;
 import javax.crypto.SecretKey;
 import kz.railan.villain_lair_api.user.entity.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class JwtService {
-    @Autowired
-    private JwtProperties properties;
+    private static final int MIN_SECRET_BYTES = 32;
 
+    private final JwtProperties properties;
     private final SecretKey key;
 
-    public JwtService() {
-        this.key = Keys.hmacShaKeyFor(properties.secret().getBytes(StandardCharsets.UTF_8));
+    public JwtService(JwtProperties properties) {
+        this.properties = properties;
+
+        byte[] secretBytes = properties.secret().getBytes(StandardCharsets.UTF_8);
+        if (secretBytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "app.jwt.secret must be at least " + MIN_SECRET_BYTES + " bytes for HS256 signing"
+            );
+        }
+
+        this.key = Keys.hmacShaKeyFor(secretBytes);
     }
 
     public String generateToken(User user) {

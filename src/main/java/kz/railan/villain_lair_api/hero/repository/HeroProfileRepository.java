@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface HeroProfileRepository extends JpaRepository<HeroProfile, Long> {
     Optional<HeroProfile> findByUserEmail(String email);
+
+    Optional<HeroProfile> findByUserId(Long userId);
 }

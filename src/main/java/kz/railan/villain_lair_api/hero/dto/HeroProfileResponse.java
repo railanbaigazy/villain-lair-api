@@ -6,13 +6,6 @@ public record HeroProfileResponse(
         Integer coins,
         Integer baseAttack,
         Integer health,
-        EquippedWeaponResponse equippedWeapon
+        InventoryItemResponse equippedWeapon
 ) {
-    public record EquippedWeaponResponse(
-            Long id,
-            String name,
-            Integer attackBonus,
-            Integer durability
-    ) {
-    }
 }

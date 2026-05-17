@@ -20,6 +20,9 @@ public class Weapon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false, unique = true, length = 50)
+    private String code;
+
     @Column(nullable = false, unique = true, length = 80)
     private String name;
 

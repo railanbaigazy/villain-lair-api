@@ -2,6 +2,8 @@ package kz.railan.villain_lair_api.lair.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -40,8 +42,15 @@ public class Lair {
     @Column(nullable = false)
     private Integer health;
 
+    @Column(name = "max_health", nullable = false)
+    private Integer maxHealth;
+
     @Column(name = "security_level", nullable = false)
     private Integer securityLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private LairStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -54,6 +63,12 @@ public class Lair {
         Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
+        if (maxHealth == null) {
+            maxHealth = 100;
+        }
+        if (status == null) {
+            status = LairStatus.ACTIVE;
+        }
     }
 
     @PreUpdate

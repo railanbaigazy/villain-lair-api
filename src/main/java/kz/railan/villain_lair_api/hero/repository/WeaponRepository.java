@@ -6,4 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface WeaponRepository extends JpaRepository<Weapon, Long> {
     Optional<Weapon> findByName(String name);
+
+    Optional<Weapon> findByCode(String code);
 }
